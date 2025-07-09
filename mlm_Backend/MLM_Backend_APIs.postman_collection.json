@@ -1,0 +1,850 @@
+{
+	"info": {
+		"_postman_id": "mlm-backend-apis",
+		"name": "MLM Backend APIs",
+		"description": "Complete API collection for MLM Backend System with Node.js, Express.js and MongoDB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.token) {",
+									"        pm.globals.set('authToken', response.data.token);",
+									"        pm.collectionVariables.set('authToken', response.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"password123\",\n  \"sponsorReferralCode\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Register a new user with optional sponsor referral code"
+					}
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.token) {",
+									"        pm.globals.set('authToken', response.data.token);",
+									"        pm.collectionVariables.set('authToken', response.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login user and get JWT token"
+					}
+				},
+				{
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Get current user profile"
+					}
+				},
+				{
+					"name": "Verify Referral Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify-referral/REF123",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "verify-referral", "REF123"]
+						},
+						"description": "Verify if referral code is valid"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout user"
+					}
+				}
+			]
+		},
+		{
+			"name": "👤 User Management",
+			"item": [
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Updated\",\n  \"address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"zipCode\": \"10001\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "profile"]
+						},
+						"description": "Update user profile information"
+					}
+				},
+				{
+					"name": "Update Bank Account",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bankName\": \"Chase Bank\",\n  \"accountNumber\": \"1234567890\",\n  \"accountHolderName\": \"John Doe\",\n  \"ifscCode\": \"CHASE001\",\n  \"routingNumber\": \"021000021\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/bank-account",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "bank-account"]
+						},
+						"description": "Update bank account details"
+					}
+				},
+				{
+					"name": "Update USDT Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usdtAddress\": \"TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/usdt-address",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "usdt-address"]
+						},
+						"description": "Update USDT wallet address"
+					}
+				},
+				{
+					"name": "Get User Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "stats"]
+						},
+						"description": "Get user statistics and metrics"
+					}
+				}
+			]
+		},
+		{
+			"name": "💰 Wallet Management",
+			"item": [
+				{
+					"name": "Get Wallet Overview",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/wallet",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet"]
+						},
+						"description": "Get complete wallet information with income breakdown"
+					}
+				},
+				{
+					"name": "Get Wallet Transactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/transactions?page=1&limit=10&type=DIRECT_REFERRAL",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "transactions"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "type",
+									"value": "DIRECT_REFERRAL"
+								}
+							]
+						},
+						"description": "Get wallet transaction history with filters"
+					}
+				},
+				{
+					"name": "Get Income Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/income-summary?startDate=2024-01-01&endDate=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "income-summary"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								}
+							]
+						},
+						"description": "Get income summary by type and period"
+					}
+				},
+				{
+					"name": "Get Commission Earnings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/commissions?level=1&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "commissions"],
+							"query": [
+								{
+									"key": "level",
+									"value": "1"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get commission earnings by level"
+					}
+				},
+				{
+					"name": "Get Balance History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/balance-history?days=30",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "balance-history"],
+							"query": [
+								{
+									"key": "days",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Get wallet balance history for specified days"
+					}
+				}
+			]
+		},
+		{
+			"name": "👥 Team Management",
+			"item": [
+				{
+					"name": "Get Direct Team",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/team/direct?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["team", "direct"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get direct team members (Level 1 referrals)"
+					}
+				},
+				{
+					"name": "Get Team by Level",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/team/level/2?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["team", "level", "2"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get team members by specific level (1-4)"
+					}
+				},
+				{
+					"name": "Get Complete Team",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/team/complete?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["team", "complete"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get complete team across all levels"
+					}
+				},
+				{
+					"name": "Get Team Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/team/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["team", "stats"]
+						},
+						"description": "Get team statistics and counts by level"
+					}
+				},
+				{
+					"name": "Get Team Genealogy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/team/genealogy?levels=4",
+							"host": ["{{baseUrl}}"],
+							"path": ["team", "genealogy"],
+							"query": [
+								{
+									"key": "levels",
+									"value": "4"
+								}
+							]
+						},
+						"description": "Get team genealogy tree structure"
+					}
+				}
+			]
+		},
+		{
+			"name": "💸 Withdrawal Management",
+			"item": [
+				{
+					"name": "Request Bank Withdrawal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 100,\n  \"method\": \"BANK_TRANSFER\",\n  \"bankDetails\": {\n    \"bankName\": \"Chase Bank\",\n    \"accountNumber\": \"1234567890\",\n    \"accountHolderName\": \"John Doe\",\n    \"ifscCode\": \"CHASE001\",\n    \"routingNumber\": \"021000021\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal"]
+						},
+						"description": "Request withdrawal via bank transfer"
+					}
+				},
+				{
+					"name": "Request USDT Withdrawal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 50,\n  \"method\": \"USDT\",\n  \"usdtAddress\": \"TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal"]
+						},
+						"description": "Request withdrawal via USDT"
+					}
+				},
+				{
+					"name": "Get User Withdrawals",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal?page=1&limit=10&status=PENDING",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "PENDING"
+								}
+							]
+						},
+						"description": "Get user's withdrawal history"
+					}
+				},
+				{
+					"name": "Get Withdrawal Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "{{withdrawalId}}"]
+						},
+						"description": "Get specific withdrawal details"
+					}
+				},
+				{
+					"name": "Cancel Withdrawal",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "{{withdrawalId}}", "cancel"]
+						},
+						"description": "Cancel pending withdrawal"
+					}
+				},
+				{
+					"name": "Get Withdrawal Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "stats"]
+						},
+						"description": "Get withdrawal statistics by status"
+					}
+				}
+			]
+		},
+		{
+			"name": "📊 Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Overview",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard"]
+						},
+						"description": "Get complete dashboard overview with stats"
+					}
+				},
+				{
+					"name": "Get Earnings Chart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/earnings-chart?period=last30days",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "earnings-chart"],
+							"query": [
+								{
+									"key": "period",
+									"value": "last30days"
+								}
+							]
+						},
+						"description": "Get earnings chart data for specified period"
+					}
+				},
+				{
+					"name": "Get Team Growth Chart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/team-growth?period=last12months",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "team-growth"],
+							"query": [
+								{
+									"key": "period",
+									"value": "last12months"
+								}
+							]
+						},
+						"description": "Get team growth chart data"
+					}
+				},
+				{
+					"name": "Get Quick Actions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/quick-actions",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "quick-actions"]
+						},
+						"description": "Get quick actions and recent activity"
+					}
+				},
+				{
+					"name": "Get Income Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/income-analytics",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "income-analytics"]
+						},
+						"description": "Get detailed income analytics and breakdowns"
+					}
+				}
+			]
+		},
+		{
+			"name": "💼 Investment (Optional)",
+			"item": [
+				{
+					"name": "Create Investment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 1000,\n  \"investmentType\": \"BASIC_PLAN\",\n  \"description\": \"Initial investment in basic plan\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/investment",
+							"host": ["{{baseUrl}}"],
+							"path": ["investment"]
+						},
+						"description": "Create new investment"
+					}
+				},
+				{
+					"name": "Get User Investments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/investment",
+							"host": ["{{baseUrl}}"],
+							"path": ["investment"]
+						},
+						"description": "Get user's investment history"
+					}
+				}
+			]
+		},
+		{
+			"name": "🔧 Admin APIs",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user?page=1&limit=10&search=john&status=ACTIVE",
+							"host": ["{{baseUrl}}"],
+							"path": ["user"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "john"
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE"
+								}
+							]
+						},
+						"description": "Get all users with search and filters (Admin only)"
+					}
+				},
+				{
+					"name": "Activate User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/{{userId}}/activate",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "{{userId}}", "activate"]
+						},
+						"description": "Activate user account (Admin only)"
+					}
+				},
+				{
+					"name": "Deactivate User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/{{userId}}/deactivate",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "{{userId}}", "deactivate"]
+						},
+						"description": "Deactivate user account (Admin only)"
+					}
+				},
+				{
+					"name": "Get All Withdrawals",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/admin/all?page=1&limit=10&status=PENDING",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "admin", "all"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "PENDING"
+								}
+							]
+						},
+						"description": "Get all withdrawal requests (Admin only)"
+					}
+				},
+				{
+					"name": "Process Withdrawal - Approve",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Approved for processing\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "{{withdrawalId}}", "process"]
+						},
+						"description": "Approve withdrawal request (Admin only)"
+					}
+				},
+				{
+					"name": "Process Withdrawal - Complete",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"complete\",\n  \"transactionHash\": \"0x1234567890abcdef\",\n  \"adminNotes\": \"Payment completed successfully\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "{{withdrawalId}}", "process"]
+						},
+						"description": "Complete withdrawal request (Admin only)"
+					}
+				},
+				{
+					"name": "Process Withdrawal - Reject",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"reject\",\n  \"rejectionReason\": \"Insufficient documentation\",\n  \"adminNotes\": \"Please provide valid ID\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/process",
+							"host": ["{{baseUrl}}"],
+							"path": ["withdrawal", "{{withdrawalId}}", "process"]
+						},
+						"description": "Reject withdrawal request (Admin only)"
+					}
+				}
+			]
+		}
+	]
+}
