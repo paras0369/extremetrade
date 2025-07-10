@@ -238,32 +238,6 @@ const Login = () => {
             </p>
           </div>
         </div>
-
-        <div className="auth-features">
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">🔒</div>
-            </div>
-            <h3>Secure Trading</h3>
-            <p>Advanced security measures to protect your investments</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">📈</div>
-            </div>
-            <h3>Real-time Analytics</h3>
-            <p>Live market data and comprehensive trading insights</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">🎯</div>
-            </div>
-            <h3>Expert Support</h3>
-            <p>24/7 customer support and trading guidance</p>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+mlm_Backend/node_modules
+mlm_Backend/package-lock.json

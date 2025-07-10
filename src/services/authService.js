@@ -10,19 +10,17 @@ export const authService = {
         name: userData.name,
         email: userData.email,
         password: userData.password,
-        confirmPassword: userData.password, // Backend expects confirmPassword
         phone: userData.phone,
-        sponsorCode: userData.referralCode // Backend expects sponsorCode, not referralCode
+        sponsorReferralCode: userData.referralCode // Backend expects sponsorReferralCode
       };
 
       const response = await api.post('/auth/register', payload);
       
-      if (response.data.status === 'success') {
-        const { user, tokens } = response.data.data;
+      if (response.data.success) {
+        const { user, token } = response.data.data;
         
-        // Store tokens and user data
-        localStorage.setItem('accessToken', tokens.accessToken);
-        localStorage.setItem('refreshToken', tokens.refreshToken);
+        // Store token and user data
+        localStorage.setItem('accessToken', token);
         localStorage.setItem('user', JSON.stringify(user));
         
         toast.success('Account created successfully!');
@@ -44,12 +42,11 @@ export const authService = {
     try {
       const response = await api.post('/auth/login', credentials);
       
-      if (response.data.status === 'success') {
-        const { user, tokens } = response.data.data;
+      if (response.data.success) {
+        const { user, token } = response.data.data;
         
-        // Store tokens and user data
-        localStorage.setItem('accessToken', tokens.accessToken);
-        localStorage.setItem('refreshToken', tokens.refreshToken);
+        // Store token and user data
+        localStorage.setItem('accessToken', token);
         localStorage.setItem('user', JSON.stringify(user));
         
         toast.success(`Welcome back, ${user.name}!`);
@@ -91,7 +88,7 @@ export const authService = {
       console.log('authService.getProfile: Response data:', response.data);
       console.log('authService.getProfile: Response status:', response.data?.status);
       
-      if (response.data.status === 'success') {
+      if (response.data.success) {
         // Update stored user data
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
         console.log('authService.getProfile: Profile retrieved successfully');
@@ -218,6 +215,25 @@ export const authService = {
   // Get refresh token
   getRefreshToken() {
     return localStorage.getItem('refreshToken');
+  },
+
+  // Verify referral code
+  async verifyReferralCode(referralCode) {
+    try {
+      const response = await api.get(`/auth/verify-referral/${referralCode}`);
+      
+      if (response.data.success) {
+        return { success: true, data: response.data.data };
+      }
+      
+      return { success: false, error: response.data.message };
+    } catch (error) {
+      console.error('Verify referral code error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to verify referral code' 
+      };
+    }
   },
 };
 

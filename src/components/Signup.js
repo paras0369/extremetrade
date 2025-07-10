@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Users, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Users, ArrowRight, Loader2, CheckCircle, Phone } from 'lucide-react';
 import authService from '../services/authService';
 import './Signup.css';
 
@@ -28,20 +28,55 @@ const Signup = () => {
 
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState(1);
+  const [referrerInfo, setReferrerInfo] = useState(null);
+  const [verifyingReferral, setVerifyingReferral] = useState(false);
 
   // Load referral code from URL on component mount
   useEffect(() => {
     const refCode = searchParams.get('ref');
     if (refCode) {
       setFormData(prev => ({ ...prev, referralCode: refCode }));
+      verifyReferralCode(refCode);
     }
   }, [searchParams]);
 
+  // Verify referral code and get referrer info
+  const verifyReferralCode = async (code) => {
+    if (!code || code.length !== 8) {
+      setReferrerInfo(null);
+      return;
+    }
+
+    setVerifyingReferral(true);
+    try {
+      const result = await authService.verifyReferralCode(code);
+      if (result.success) {
+        setReferrerInfo(result.data.sponsor);
+        setErrors(prev => ({ ...prev, referralCode: '' }));
+      } else {
+        setReferrerInfo(null);
+        setErrors(prev => ({ ...prev, referralCode: result.error }));
+      }
+    } catch (error) {
+      setReferrerInfo(null);
+      setErrors(prev => ({ ...prev, referralCode: 'Failed to verify referral code' }));
+    } finally {
+      setVerifyingReferral(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let processedValue = value;
+    
+    // Convert referral code to uppercase
+    if (name === 'referralCode') {
+      processedValue = value.toUpperCase();
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : processedValue
     }));
 
     // Clear specific field error when user starts typing
@@ -55,6 +90,13 @@ const Signup = () => {
     // Calculate password strength
     if (name === 'password') {
       calculatePasswordStrength(value);
+    }
+
+    // Verify referral code when it changes
+    if (name === 'referralCode' && processedValue.length === 8) {
+      verifyReferralCode(processedValue);
+    } else if (name === 'referralCode' && processedValue.length !== 8) {
+      setReferrerInfo(null);
     }
   };
 
@@ -103,8 +145,8 @@ const Signup = () => {
     }
 
     // Validate referral code if provided
-    if (formData.referralCode.trim() && !/^\d{6}$/.test(formData.referralCode.trim())) {
-      newErrors.referralCode = 'Referral code must be 6 digits';
+    if (formData.referralCode.trim() && !/^[A-Z0-9]{8}$/.test(formData.referralCode.trim())) {
+      newErrors.referralCode = 'Referral code must be 8 characters (letters and numbers)';
     }
 
     setErrors(newErrors);
@@ -318,7 +360,7 @@ const Signup = () => {
                     Phone Number
                   </label>
                   <div className="input-wrapper">
-                    <span className="input-icon">📱</span>
+                    <Phone className="input-icon" size={18} />
                     <input
                       type="tel"
                       id="phone"
@@ -346,15 +388,35 @@ const Signup = () => {
                       value={formData.referralCode}
                       onChange={handleInputChange}
                       className={`form-input ${errors.referralCode ? 'error' : ''}`}
-                      placeholder="Enter referral code (6 digits)"
-                      maxLength="6"
+                      placeholder="Enter referral code (8 characters)"
+                      maxLength="8"
                     />
+                    {verifyingReferral && (
+                      <div className="input-loading">
+                        <Loader2 className="spin" size={16} />
+                      </div>
+                    )}
                   </div>
                   {errors.referralCode && <span className="error-text">{errors.referralCode}</span>}
-                  {formData.referralCode && !errors.referralCode && formData.referralCode.length === 6 && (
-                    <div className="referral-info">
-                      <CheckCircle size={16} />
-                      <span>You'll receive a signup bonus when you register!</span>
+                  {referrerInfo && (
+                    <div className="referrer-info">
+                      <div className="referrer-badge">
+                        <CheckCircle size={16} />
+                        <span>Valid referral code</span>
+                      </div>
+                      <div className="referrer-details">
+                        <div className="referrer-name">
+                          <User size={14} />
+                          <span>Referred by: <strong>{referrerInfo.name}</strong></span>
+                        </div>
+                        <div className="referrer-email">
+                          <Mail size={14} />
+                          <span>{referrerInfo.email}</span>
+                        </div>
+                        <div className="referrer-bonus">
+                          <span>💰 You'll both receive signup bonuses!</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -521,32 +583,6 @@ const Signup = () => {
                 Sign in here
               </Link>
             </p>
-          </div>
-        </div>
-
-        <div className="auth-features">
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">💰</div>
-            </div>
-            <h3>Signup Bonus</h3>
-            <p>Get $10 bonus when you create your account</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">🎯</div>
-            </div>
-            <h3>Referral Rewards</h3>
-            <p>Earn up to $50 for each friend you refer</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <div className="icon-bg">🚀</div>
-            </div>
-            <h3>Instant Trading</h3>
-            <p>Start trading immediately after verification</p>
           </div>
         </div>
       </div>
