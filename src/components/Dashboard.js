@@ -232,12 +232,22 @@ const Dashboard = () => {
 
   const renderDashboardOverview = () => {
     const stats = dashboardData.overview?.success
-      ? dashboardData.overview.data
+      ? (dashboardData.overview.data?.data || dashboardData.overview.data)
       : {};
     const walletData = dashboardData.wallet?.success
-      ? dashboardData.wallet.data
+      ? (dashboardData.wallet.data?.data?.wallet || dashboardData.wallet.data?.wallet || dashboardData.wallet.data)
       : {};
-    const teamData = dashboardData.team?.success ? dashboardData.team.data : {};
+    const teamData = dashboardData.team?.success 
+      ? (dashboardData.team.data?.data || dashboardData.team.data) 
+      : {};
+
+    // Debug data structures
+    console.log('Dashboard wallet data:', dashboardData.wallet);
+    console.log('Processed wallet data:', walletData);
+    console.log('Dashboard overview data:', dashboardData.overview);
+    console.log('Processed stats data:', stats);
+    console.log('Dashboard team data:', dashboardData.team);
+    console.log('Processed team data:', teamData);
 
     return (
       <div>
@@ -367,7 +377,7 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {dashboardData.wallet?.success &&
-                  dashboardData.wallet.data.recentTransactions?.map(
+                  (dashboardData.wallet.data?.data?.wallet?.recentTransactions || dashboardData.wallet.data?.recentTransactions)?.map(
                     (transaction) => (
                       <tr key={transaction.id}>
                         <td>{transaction.type}</td>
@@ -394,7 +404,7 @@ const Dashboard = () => {
 
   const renderWalletTab = () => {
     const walletData = dashboardData.wallet?.success
-      ? dashboardData.wallet.data
+      ? (dashboardData.wallet.data?.data?.wallet || dashboardData.wallet.data?.wallet || dashboardData.wallet.data)
       : {};
 
     return (
@@ -515,7 +525,9 @@ const Dashboard = () => {
   };
 
   const renderTeamTab = () => {
-    const teamData = dashboardData.team?.success ? dashboardData.team.data : {};
+    const teamData = dashboardData.team?.success 
+      ? (dashboardData.team.data?.data || dashboardData.team.data) 
+      : {};
 
     return (
       <div>
