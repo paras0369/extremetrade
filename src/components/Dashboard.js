@@ -35,6 +35,8 @@ import {
   Layers,
   Zap,
   Copy,
+  Gift,
+  Award,
 } from "lucide-react";
 import authService from "../services/authService";
 import mlmApi from "../services/mlmApi";
@@ -58,6 +60,35 @@ const Dashboard = () => {
     investments: null,
   });
   const [showNotifications, setShowNotifications] = useState(false);
+  
+  // Withdrawal state
+  const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
+  const [withdrawalMethod, setWithdrawalMethod] = useState('BANK_TRANSFER');
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalStatusFilter, setWithdrawalStatusFilter] = useState('ALL');
+  const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountHolderName: '',
+    ifscCode: '',
+    routingNumber: ''
+  });
+  const [usdtAddress, setUsdtAddress] = useState('');
+
+  // Withdrawal constants
+  const WITHDRAWAL_STATUS = {
+    PENDING: 'PENDING',
+    PROCESSING: 'PROCESSING', 
+    COMPLETED: 'COMPLETED',
+    REJECTED: 'REJECTED'
+  };
+
+  const WITHDRAWAL_METHODS = {
+    BANK_TRANSFER: 'BANK_TRANSFER',
+    USDT: 'USDT',
+    CRYPTO: 'CRYPTO'
+  };
 
   // Navigation structure based on backend APIs
   const navigationItems = [
@@ -639,6 +670,550 @@ const Dashboard = () => {
     );
   };
 
+  const renderIncomeTab = () => {
+    const incomeData = dashboardData.income?.success 
+      ? (dashboardData.income.data?.data || dashboardData.income.data) 
+      : {};
+    
+    const incomeSummary = incomeData.incomeSummary || {};
+
+    return (
+      <div>
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Income Analytics</h1>
+            <p className="page-subtitle">Track your earnings and commissions</p>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-primary">
+              <DollarSign size={16} />
+              View Details
+            </button>
+          </div>
+        </div>
+
+        <div className="stats-grid">
+          <div className="stat-card primary">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <DollarSign size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Total Income</h3>
+              <p className="stat-value">
+                {formatCurrency(incomeSummary.total?.amount || 0)}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>{incomeSummary.total?.count || 0} transactions</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <Users size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Direct Referral</h3>
+              <p className="stat-value">
+                {formatCurrency(incomeSummary.directReferral?.amount || 0)}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>{incomeSummary.directReferral?.count || 0} referrals</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <Gift size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Signup Bonus</h3>
+              <p className="stat-value">
+                {formatCurrency(incomeSummary.signupBonus?.amount || 0)}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>{incomeSummary.signupBonus?.count || 0} bonuses</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <Award size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Reward Income</h3>
+              <p className="stat-value">
+                {formatCurrency(incomeSummary.rewardIncome?.amount || 0)}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>{incomeSummary.rewardIncome?.count || 0} rewards</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="data-table-container">
+          <div className="table-header">
+            <h3>Level Commissions</h3>
+            <p>Multi-level commission breakdown</p>
+          </div>
+          <div className="data-table">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Amount</th>
+                  <th>Count</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(incomeSummary.levelCommissions || {}).map(([level, data]) => (
+                  <tr key={level}>
+                    <td>{level.replace('level', 'Level ')}</td>
+                    <td className="amount positive">
+                      {formatCurrency(data.amount || 0)}
+                    </td>
+                    <td>{data.count || 0}</td>
+                    <td>
+                      {incomeSummary.total?.amount > 0 
+                        ? `${((data.amount || 0) / incomeSummary.total.amount * 100).toFixed(1)}%`
+                        : '0%'
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Withdrawal helper functions
+  const handleWithdrawalSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!withdrawalAmount || parseFloat(withdrawalAmount) <= 0) {
+      toast.error('Please enter a valid withdrawal amount');
+      return;
+    }
+
+    const walletData = dashboardData.wallet?.success 
+      ? (dashboardData.wallet.data?.data || dashboardData.wallet.data) 
+      : {};
+
+    if (parseFloat(withdrawalAmount) > (walletData.availableBalance || 0)) {
+      toast.error('Insufficient available balance');
+      return;
+    }
+
+    setIsSubmittingWithdrawal(true);
+
+    try {
+      const withdrawalData = {
+        amount: parseFloat(withdrawalAmount),
+        method: withdrawalMethod
+      };
+
+      if (withdrawalMethod === WITHDRAWAL_METHODS.BANK_TRANSFER) {
+        if (!bankDetails.bankName || !bankDetails.accountNumber || !bankDetails.accountHolderName) {
+          toast.error('Please fill in all required bank details');
+          setIsSubmittingWithdrawal(false);
+          return;
+        }
+        withdrawalData.bankDetails = bankDetails;
+      } else if (withdrawalMethod === WITHDRAWAL_METHODS.USDT) {
+        if (!usdtAddress) {
+          toast.error('Please enter USDT wallet address');
+          setIsSubmittingWithdrawal(false);
+          return;
+        }
+        withdrawalData.usdtAddress = usdtAddress;
+      }
+
+      const result = await mlmApi.createWithdrawal(withdrawalData);
+      
+      if (result.success) {
+        toast.success('Withdrawal request submitted successfully');
+        setShowWithdrawalForm(false);
+        setWithdrawalAmount('');
+        setBankDetails({
+          bankName: '',
+          accountNumber: '',
+          accountHolderName: '',
+          ifscCode: '',
+          routingNumber: ''
+        });
+        setUsdtAddress('');
+        
+        // Reload withdrawal data
+        const data = await mlmApi.loadDashboardData();
+        setDashboardData(data);
+      } else {
+        toast.error(result.message || 'Failed to submit withdrawal request');
+      }
+    } catch (error) {
+      console.error('Withdrawal submission error:', error);
+      toast.error('Failed to submit withdrawal request');
+    } finally {
+      setIsSubmittingWithdrawal(false);
+    }
+  };
+
+  const getWithdrawalStatusBadge = (status) => {
+    const statusClasses = {
+      [WITHDRAWAL_STATUS.PENDING]: 'status-badge warning',
+      [WITHDRAWAL_STATUS.PROCESSING]: 'status-badge info',
+      [WITHDRAWAL_STATUS.COMPLETED]: 'status-badge success',
+      [WITHDRAWAL_STATUS.REJECTED]: 'status-badge danger'
+    };
+
+    return (
+      <span className={statusClasses[status] || 'status-badge'}>
+        {status}
+      </span>
+    );
+  };
+
+  const filterWithdrawals = (withdrawals) => {
+    if (!withdrawals || withdrawalStatusFilter === 'ALL') return withdrawals;
+    return withdrawals.filter(withdrawal => withdrawal.status === withdrawalStatusFilter);
+  };
+
+  const renderWithdrawalTab = () => {
+    const withdrawalData = dashboardData.withdrawals?.success 
+      ? (dashboardData.withdrawals.data?.data || dashboardData.withdrawals.data) 
+      : {};
+    
+    const walletData = dashboardData.wallet?.success 
+      ? (dashboardData.wallet.data?.data || dashboardData.wallet.data) 
+      : {};
+
+    const withdrawals = withdrawalData.withdrawals || [];
+    const filteredWithdrawals = filterWithdrawals(withdrawals);
+
+    return (
+      <div>
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Withdrawal Management</h1>
+            <p className="page-subtitle">Request withdrawals and track your history</p>
+          </div>
+          <div className="page-actions">
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowWithdrawalForm(true)}
+            >
+              <CreditCard size={16} />
+              New Withdrawal
+            </button>
+          </div>
+        </div>
+
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <Wallet size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Available Balance</h3>
+              <p className="stat-value">
+                {formatCurrency(walletData.availableBalance || 0)}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>Ready to withdraw</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <Clock size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Pending Withdrawals</h3>
+              <p className="stat-value">
+                {withdrawals.filter(w => w.status === WITHDRAWAL_STATUS.PENDING).length}
+              </p>
+              <div className="stat-change warning">
+                <Clock size={16} />
+                <span>Awaiting processing</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <CheckCircle size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Completed Withdrawals</h3>
+              <p className="stat-value">
+                {withdrawals.filter(w => w.status === WITHDRAWAL_STATUS.COMPLETED).length}
+              </p>
+              <div className="stat-change positive">
+                <CheckCircle size={16} />
+                <span>Successfully processed</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-header">
+              <div className="stat-icon">
+                <DollarSign size={24} />
+              </div>
+            </div>
+            <div className="stat-content">
+              <h3>Total Withdrawn</h3>
+              <p className="stat-value">
+                {formatCurrency(
+                  withdrawals
+                    .filter(w => w.status === WITHDRAWAL_STATUS.COMPLETED)
+                    .reduce((sum, w) => sum + (w.amount || 0), 0)
+                )}
+              </p>
+              <div className="stat-change positive">
+                <ArrowUpRight size={16} />
+                <span>Lifetime total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="data-table-container">
+          <div className="table-header">
+            <h3>Withdrawal History</h3>
+            <div className="table-actions">
+              <button
+                className={`btn ${withdrawalStatusFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setWithdrawalStatusFilter('ALL')}
+              >
+                All
+              </button>
+              <button
+                className={`btn ${withdrawalStatusFilter === WITHDRAWAL_STATUS.PENDING ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setWithdrawalStatusFilter(WITHDRAWAL_STATUS.PENDING)}
+              >
+                Pending
+              </button>
+              <button
+                className={`btn ${withdrawalStatusFilter === WITHDRAWAL_STATUS.COMPLETED ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setWithdrawalStatusFilter(WITHDRAWAL_STATUS.COMPLETED)}
+              >
+                Completed
+              </button>
+              <button
+                className={`btn ${withdrawalStatusFilter === WITHDRAWAL_STATUS.REJECTED ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setWithdrawalStatusFilter(WITHDRAWAL_STATUS.REJECTED)}
+              >
+                Rejected
+              </button>
+            </div>
+          </div>
+          <div className="data-table">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: '10%' }}>ID</th>
+                  <th style={{ width: '15%' }}>Method</th>
+                  <th style={{ width: '15%' }}>Amount</th>
+                  <th style={{ width: '12%' }}>Status</th>
+                  <th style={{ width: '20%' }}>Date</th>
+                  <th style={{ width: '28%' }}>Net Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredWithdrawals.map((withdrawal) => (
+                  <tr key={withdrawal.id}>
+                    <td>#{withdrawal.id?.toString().slice(-6) || 'N/A'}</td>
+                    <td>
+                      <span className="method-badge">
+                        {withdrawal.method === 'BANK_TRANSFER' ? 'Bank' : 
+                         withdrawal.method === 'USDT' ? 'USDT' : 'Crypto'}
+                      </span>
+                    </td>
+                    <td className="amount">{formatCurrency(withdrawal.amount)}</td>
+                    <td>{getWithdrawalStatusBadge(withdrawal.status)}</td>
+                    <td>{formatDate(withdrawal.requestedAt)}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span className="amount positive">
+                          {formatCurrency(withdrawal.netAmount || withdrawal.amount)}
+                        </span>
+                        {withdrawal.processingFee > 0 && (
+                          <small style={{ color: '#64748b' }}>
+                            Fee: {formatCurrency(withdrawal.processingFee)}
+                          </small>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Withdrawal Form Modal */}
+        {showWithdrawalForm && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>New Withdrawal Request</h3>
+                <button 
+                  className="modal-close"
+                  onClick={() => setShowWithdrawalForm(false)}
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleWithdrawalSubmit}>
+                <div className="form-group">
+                  <label>Available Balance</label>
+                  <div className="balance-display">
+                    {formatCurrency(walletData.availableBalance || 0)}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Withdrawal Amount</label>
+                  <input
+                    type="number"
+                    value={withdrawalAmount}
+                    onChange={(e) => setWithdrawalAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Withdrawal Method</label>
+                  <select
+                    value={withdrawalMethod}
+                    onChange={(e) => setWithdrawalMethod(e.target.value)}
+                    required
+                  >
+                    <option value={WITHDRAWAL_METHODS.BANK_TRANSFER}>Bank Transfer</option>
+                    <option value={WITHDRAWAL_METHODS.USDT}>USDT</option>
+                  </select>
+                </div>
+
+                {withdrawalMethod === WITHDRAWAL_METHODS.BANK_TRANSFER && (
+                  <>
+                    <div className="form-group">
+                      <label>Bank Name</label>
+                      <input
+                        type="text"
+                        value={bankDetails.bankName}
+                        onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                        placeholder="Enter bank name"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Account Number</label>
+                      <input
+                        type="text"
+                        value={bankDetails.accountNumber}
+                        onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                        placeholder="Enter account number"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Account Holder Name</label>
+                      <input
+                        type="text"
+                        value={bankDetails.accountHolderName}
+                        onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
+                        placeholder="Enter account holder name"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>IFSC Code</label>
+                      <input
+                        type="text"
+                        value={bankDetails.ifscCode}
+                        onChange={(e) => setBankDetails({...bankDetails, ifscCode: e.target.value})}
+                        placeholder="Enter IFSC code"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Routing Number</label>
+                      <input
+                        type="text"
+                        value={bankDetails.routingNumber}
+                        onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
+                        placeholder="Enter routing number"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {withdrawalMethod === WITHDRAWAL_METHODS.USDT && (
+                  <div className="form-group">
+                    <label>USDT Wallet Address</label>
+                    <input
+                      type="text"
+                      value={usdtAddress}
+                      onChange={(e) => setUsdtAddress(e.target.value)}
+                      placeholder="Enter USDT wallet address"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="form-actions">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => setShowWithdrawalForm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary"
+                    disabled={isSubmittingWithdrawal}
+                  >
+                    {isSubmittingWithdrawal ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -657,19 +1232,9 @@ const Dashboard = () => {
       case "team":
         return renderTeamTab();
       case "income":
-        return (
-          <div className="empty-state">
-            <h3>Income Analytics</h3>
-            <p>Coming soon...</p>
-          </div>
-        );
+        return renderIncomeTab();
       case "withdrawals":
-        return (
-          <div className="empty-state">
-            <h3>Withdrawal Management</h3>
-            <p>Coming soon...</p>
-          </div>
-        );
+        return renderWithdrawalTab();
       case "investments":
         return (
           <div className="empty-state">
